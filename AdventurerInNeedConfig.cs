@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Game.Text;
+using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
 using Dalamud.Utility;
 
 namespace AdventurerInNeed {
@@ -29,6 +31,8 @@ namespace AdventurerInNeed {
         public int Version { get; set; }
         public bool InGameAlert { get; set; }
         public XivChatType ChatType { get; set; } = XivChatType.SystemMessage;
+        public bool ShowBonusIcon = true;
+        public IncompleteSetting IncompleteSetting = IncompleteSetting.AlertAll;
 
         public void Init(AdventurerInNeed plugin) {
             this.plugin = plugin;
@@ -99,17 +103,39 @@ namespace AdventurerInNeed {
                 ImGui.EndCombo();
             }
 
+            var showBonusIcon = ShowBonusIcon;
+            if (ImGui.Checkbox($"Show {SeIconChar.Buff.ToIconString()}  icon in alert if daily bonus is available.", ref showBonusIcon)) {
+                ShowBonusIcon = showBonusIcon;
+                Save();
+            }
+
+            ImGui.Text("Require daily bonus for alerts?");
+            ImGui.Indent();
+            if (ImGui.RadioButton("Do not require daily bonus.", IncompleteSetting == IncompleteSetting.AlertAll)) {
+                IncompleteSetting = IncompleteSetting.AlertAll;
+                modified = true;
+            }
+            if (ImGui.RadioButton("Require daily bonus.", IncompleteSetting == IncompleteSetting.AlertIncomplete)) {
+                IncompleteSetting = IncompleteSetting.AlertIncomplete;
+                modified = true;
+            }
+            if (ImGui.RadioButton($"Require daily bonus only if {SeIconChar.Buff.ToIconString()}  column is checked.", IncompleteSetting == IncompleteSetting.UseRouletteConfig)) {
+                IncompleteSetting = IncompleteSetting.UseRouletteConfig;
+                modified = true;
+            }
+            ImGui.Unindent();
+
             ImGui.Separator();
             ImGui.Columns(7, "###cols", false);
-            ImGui.SetColumnWidth(0, 60f * scale);
+            ImGui.SetColumnWidth(0, 70f * scale);
             ImGui.SetColumnWidth(1, ImGui.GetWindowWidth() - 340f * scale);
             ImGui.SetColumnWidth(2, 40f * scale);
             ImGui.SetColumnWidth(3, 40f * scale);
             ImGui.SetColumnWidth(4, 40f * scale);
-            ImGui.SetColumnWidth(5, 80f * scale);
+            ImGui.SetColumnWidth(5, 70f * scale);
             ImGui.SetColumnWidth(6, 80f * scale);
 
-            ImGui.Text("Alerts");
+            ImGui.Text("Alert  " + SeIconChar.Buff.ToIconString());
             ImGui.NextColumn();
             ImGui.Text("Roulette");
             ImGui.NextColumn();
@@ -143,10 +169,12 @@ namespace AdventurerInNeed {
                     }
                     
                     ImGui.SameLine();
+                    ImGui.PushStyleColor(ImGuiCol.CheckMark, IncompleteSetting != IncompleteSetting.UseRouletteConfig ? ImGuiColors.ParsedGrey : new Vector4(0.905f, 0.666f, 0.243f, 1f));
                     modified = ImGui.Checkbox($"###rouletteIncompleteOnly{r.RowId}", ref rCfg.OnlyIncomplete) || modified;
                     if (ImGui.IsItemHovered()) {
                         ImGui.SetTooltip($"Only show alerts if roulette has not been completed today.");
                     }
+                    ImGui.PopStyleColor();
 
                     ImGui.NextColumn();
 
@@ -184,5 +212,12 @@ namespace AdventurerInNeed {
 
             return drawConfig;
         }
+    }
+
+    public enum IncompleteSetting
+    {
+        AlertAll,
+        AlertIncomplete,
+        UseRouletteConfig
     }
 }

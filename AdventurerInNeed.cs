@@ -77,8 +77,9 @@ namespace AdventurerInNeed {
         }
 
         private void UpdatePreferredRoleList(PreferredRoleList preferredRoleList) {
+            var firstUpdate = LastPreferredRoleList == null;
 #if DEBUG
-            PluginLog.Info("Updating Preferred Role List");
+            PluginLog.Log($"Updating Preferred Role List (firstUpdate={firstUpdate})");
 #endif
             LastPreferredRoleList ??= preferredRoleList;
 
@@ -93,11 +94,20 @@ namespace AdventurerInNeed {
 #if DEBUG
                     PluginLog.Info($"{roulette.Name}: {oldRole} => {role}");
 
-                    if (role != oldRole || PluginConfig.AlwaysShowAlert) {
+                    if (role != oldRole || firstUpdate || PluginConfig.AlwaysShowAlert) {
 #else
-                    if (role != oldRole) {
+                    if (role != oldRole || firstUpdate) {
 #endif
-                        ShowAlert(roulette, rouletteConfig, role);
+                        if (PluginConfig.IncompleteSetting == IncompleteSetting.AlertAll
+                            || rouletteConfig.OnlyIncomplete == false
+                            || !IsRouletteComplete(roulette)) {
+                            ShowAlert(roulette, rouletteConfig, role);
+                        }
+#if DEBUG
+                        else {
+                            PluginLog.Debug("Suppressed alert due to no bonus");
+                        }
+#endif
                     }
 
 #if DEBUG
@@ -115,7 +125,6 @@ namespace AdventurerInNeed {
 
         internal void ShowAlert(ContentRoulette roulette, RouletteConfig config, PreferredRole role) {
             if (!config.Enabled) return;
-            if (config.OnlyIncomplete && IsRouletteComplete(roulette)) return;
 
             var doAlert = role switch {
                 PreferredRole.Tank => config.Tank,
@@ -141,17 +150,28 @@ namespace AdventurerInNeed {
                     _ => BitmapFontIcon.Warning
                 };
 
-                var payloads = new Payload[] {
+                var payloads = new List<Payload> {
                     new UIForegroundPayload(500),
                     new TextPayload(roulette.Name),
                     new UIForegroundPayload(0),
+                };
+
+                if (PluginConfig.ShowBonusIcon && !IsRouletteComplete(roulette)) {
+                    payloads.AddRange(new Payload[] {
+                        new UIForegroundPayload(568),
+                        new TextPayload(SeIconChar.Buff.ToIconString()),
+                        new UIForegroundPayload(0),
+                    });
+                }
+
+                payloads.AddRange(new Payload[] {
                     new TextPayload(" needs a "),
                     new IconPayload(icon),
                     new UIForegroundPayload(roleForegroundColor),
                     new TextPayload(role.ToString()),
                     new UIForegroundPayload(0),
                     new TextPayload("."),
-                };
+                });
 
                 var seString = new SeString(payloads);
 
