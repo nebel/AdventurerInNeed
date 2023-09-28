@@ -1,14 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using Dalamud.Data;
 using Dalamud.Game;
-using Dalamud.Game.Command;
-using Dalamud.Game.Gui;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -16,6 +10,7 @@ using Dalamud.Hooking;
 using Dalamud.IoC;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using Lumina.Excel.GeneratedSheets;
 
 namespace AdventurerInNeed {
@@ -34,10 +29,11 @@ namespace AdventurerInNeed {
 
         internal PreferredRoleList LastPreferredRoleList;
 
-        [PluginService] public static SigScanner SigScanner { get; private set; } = null!;
-        [PluginService] public static DataManager Data { get; private set; } = null!;
-        [PluginService] public static ChatGui ChatGui { get; private set; } = null!;
-        [PluginService] public static CommandManager CommandManager { get; private set; } = null!;
+        [PluginService] public static ISigScanner SigScanner { get; private set; } = null!;
+        [PluginService] public static IDataManager Data { get; private set; } = null!;
+        [PluginService] public static IChatGui ChatGui { get; private set; } = null!;
+        [PluginService] public static ICommandManager CommandManager { get; private set; } = null!;
+        [PluginService] public static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
         [PluginService] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
 
         public void Dispose() {
@@ -67,7 +63,7 @@ namespace AdventurerInNeed {
             };
 
             RouletteList = Data.GetExcelSheet<ContentRoulette>().ToList();
-            cfPreferredRoleChangeHook = Hook<CfPreferredRoleChangeDelegate>.FromAddress(cfPreferredRolePtr, new CfPreferredRoleChangeDelegate(CfPreferredRoleChangeDetour));
+            cfPreferredRoleChangeHook = GameInteropProvider.HookFromAddress(cfPreferredRolePtr, new CfPreferredRoleChangeDelegate(CfPreferredRoleChangeDetour));
             cfPreferredRoleChangeHook.Enable();
             PluginInterface.UiBuilder.Draw += this.BuildUI;
 
@@ -166,7 +162,7 @@ namespace AdventurerInNeed {
                     xivChat.Name = this.Name;
                 }
 
-                ChatGui.PrintChat(xivChat);
+                ChatGui.Print(xivChat);
             }
         }
 
