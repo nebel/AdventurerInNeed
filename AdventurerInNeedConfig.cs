@@ -8,6 +8,7 @@ using Dalamud.Game.Text;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Logging;
+using Dalamud.Utility;
 
 namespace AdventurerInNeed {
     public class RouletteConfig {
@@ -130,15 +131,17 @@ namespace AdventurerInNeed {
             }
 
             ImGui.Separator();
-            ImGui.Columns(7, "###cols", false);
+            ImGui.Columns(8, "###cols", false);
             ImGui.SetColumnWidth(0, 40f * scale);
-            ImGui.SetColumnWidth(1, ImGui.GetWindowWidth() - 280f * scale);
+            ImGui.SetColumnWidth(1, ImGui.GetWindowWidth() - 320f * scale);
             ImGui.SetColumnWidth(2, 40f * scale);
             ImGui.SetColumnWidth(3, 40f * scale);
             ImGui.SetColumnWidth(4, 40f * scale);
             ImGui.SetColumnWidth(5, 40f * scale);
-            ImGui.SetColumnWidth(6, 80f * scale);
+            ImGui.SetColumnWidth(6, 40f * scale);
+            ImGui.SetColumnWidth(7, 80f * scale);
 
+            ImGui.Text("Alert");
             ImGui.NextColumn();
             ImGui.Text("Roulette");
             ImGui.NextColumn();
@@ -149,6 +152,8 @@ namespace AdventurerInNeed {
             ImGui.Text("D");
             ImGui.NextColumn();
             ImGui.Text(SeIconChar.Buff.ToIconString());
+            ImGui.NextColumn();
+            ImGui.Text("Done");
             ImGui.NextColumn();
             ImGui.Text("Current");
             ImGui.NextColumn();
@@ -161,7 +166,13 @@ namespace AdventurerInNeed {
                     modified = ImGui.Checkbox($"###rouletteEnabled{r.RowId}", ref rCfg.Enabled) || modified;
                     ImGui.NextColumn();
 
-                    ImGui.Text(r.Name);
+                    var name = r.Name.ToDalamudString().TextValue
+                        .Replace("Duty Roulette: ", "")
+                        .Replace("DZufallsinhalt: ", "")
+                        .Replace("Mission aléatoire : ", "")
+                        .Replace("コンテンツルーレット：", "");
+
+                    ImGui.Text(name);
                     ImGui.NextColumn();
                     modified = ImGui.Checkbox($"###rouletteTankEnabled{r.RowId}", ref rCfg.Tank) || modified;
                     ImGui.NextColumn();
@@ -179,6 +190,9 @@ namespace AdventurerInNeed {
                     }
                     ImGui.NextColumn();
 
+                    ImGui.Text(AdventurerInNeed.HasBonus(r) ? "No" : "Yes");
+                    ImGui.NextColumn();
+
                     if (plugin.LastPreferredRoleList != null) {
                         var currentRole = plugin.LastPreferredRoleList.Get(r.ContentRouletteRoleBonus.Row);
                         ImGui.Text(currentRole.ToString());
@@ -187,6 +201,7 @@ namespace AdventurerInNeed {
                     ImGui.NextColumn();
 
                     Roulettes[r.RowId] = rCfg;
+                    ImGui.Separator();
                 }
             }
             
