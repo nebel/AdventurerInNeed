@@ -211,11 +211,10 @@ namespace AdventurerInNeed {
             drawConfigWindow = drawConfigWindow && PluginConfig.DrawConfigUI();
         }
 
-        private static bool HasBonus(ContentRoulette roulette)
-        {
-            unsafe {
-                return RouletteController.Instance()->IsRouletteIncomplete((byte)roulette.RowId);
-            }
+        internal static unsafe bool HasBonus(ContentRoulette roulette) {
+            if (roulette.RowId > byte.MaxValue) return true;
+            var rouletteController = RouletteController.Instance();
+            return rouletteController->IsRouletteIncomplete((byte)roulette.RowId);
         }
     }
 }
